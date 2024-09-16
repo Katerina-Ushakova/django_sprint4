@@ -27,7 +27,7 @@ urlpatterns = [
     path('pages/', include('pages.urls', namespace='pages')),
     path('admin/', admin.site.urls),
     path('auth/', include(auth_urls)),
-    
+
 ]
 
 if settings.DEBUG:
