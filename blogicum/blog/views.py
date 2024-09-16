@@ -208,4 +208,3 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
         return reverse_lazy(
             'blog:profile', kwargs={'username': self.request.user.username}
         )
-
