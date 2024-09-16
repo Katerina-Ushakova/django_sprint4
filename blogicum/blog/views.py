@@ -1,10 +1,7 @@
-from django.contrib.auth.decorators import login_required
 from django.db import models
 from django.db.models.base import Model as Model
-from django.http import HttpRequest
-from django.http.response import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse, reverse_lazy
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
@@ -212,14 +209,3 @@ class UpdateProfileView(LoginRequiredMixin, UpdateView):
             'blog:profile', kwargs={'username': self.request.user.username}
         )
 
-# @login_required
-# def edit_profile(request):
-#     """Редактирование страницы пользователя"""
-#     template = 'blog/user.html'
-#     instance = request.user or None
-#     form = UserForm(request.POST or None, instance=instance)
-#     if form.is_valid():
-#         form.save()
-#         return redirect('blog:profile', username=request.user.username)
-#     context = {'form': form}
-#     return render(request, template, context)
