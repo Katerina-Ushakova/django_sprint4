@@ -24,11 +24,6 @@ urlpatterns = [
     path('edit_profile/',
          views.UpdateProfileView.as_view(),
          name='edit_profile'),
-    # path(
-    #     'edit_profile/',
-    #     views.edit_profile,
-    #     name='edit_profile'
-    # ),
     path(
         'posts/<int:post_id>/',
         views.DetailPostView.as_view(),
