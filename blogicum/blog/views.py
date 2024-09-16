@@ -197,14 +197,29 @@ class ProfileListView(ListView):
         return context
 
 
-@login_required
-def edit_profile(request):
-    """Редактирование страницы пользователя"""
-    template = 'blog/user.html'
-    instance = request.user or None
-    form = UserForm(request.POST or None, instance=instance)
-    if form.is_valid():
-        form.save()
-        return redirect('blog:profile', username=request.user.username)
-    context = {'form': form}
-    return render(request, template, context)
+class UpdateProfileView(LoginRequiredMixin, UpdateView):
+    form_class = UserForm
+    template_name = 'blog/user.html'
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            User,
+            username=self.request.user.username
+        )
+
+    def get_success_url(self):
+        return reverse_lazy(
+            'blog:profile', kwargs={'username': self.request.user.username}
+        )
+
+# @login_required
+# def edit_profile(request):
+#     """Редактирование страницы пользователя"""
+#     template = 'blog/user.html'
+#     instance = request.user or None
+#     form = UserForm(request.POST or None, instance=instance)
+#     if form.is_valid():
+#         form.save()
+#         return redirect('blog:profile', username=request.user.username)
+#     context = {'form': form}
+#     return render(request, template, context)
