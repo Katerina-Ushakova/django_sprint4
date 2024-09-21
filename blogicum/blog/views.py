@@ -12,15 +12,17 @@ from django.views.generic import (
     DetailView,
     CreateView)
 
+from constants import Constants
 from .forms import PostForm, CommentForm, UserForm
 from .models import Post, Category
-from .mixin import (
+from .mixins import (
     CommentMixin,
     CommentSuccessUrlMixin,
     OnlyAuthorMixin,
     PostFormMixin,
     PostMixin
 )
+from .managers import PublishedPostManager
 
 User = get_user_model()
 
@@ -29,17 +31,15 @@ class IndexListView(ListView):
     """Главная страница со списком постов."""
 
     template_name = 'blog/index.html'
-    paginate_by = 10
-
-    def get_queryset(self):
-        return Post.published_posts.all()
+    paginate_by = Constants.MAX_COUNT_POSTS
+    queryset = Post.published_posts.add_count().all()
 
 
 class CategoryPostsListView(ListView):
     """Страница со списком постов выбранной категории."""
 
     template_name = 'blog/category.html'
-    paginate_by = 10
+    paginate_by = Constants.MAX_COUNT_POSTS
 
     def get_category(self):
         return get_object_or_404(
@@ -50,12 +50,8 @@ class CategoryPostsListView(ListView):
         )
 
     def get_queryset(self):
-        return self.get_category().posts.filter(
-            is_published=True,
-            pub_date__lte=timezone.now()
-        ).annotate(
-            comment_count=models.Count('comments')
-        ).order_by('-pub_date')
+        return self.get_category(
+        ).posts.published_posts().add_count()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -167,7 +163,7 @@ class ProfileListView(ListView):
     """Страница со списком постов пользователя."""
 
     template_name = 'blog/profile.html'
-    paginate_by = 10
+    paginate_by = Constants.MAX_COUNT_POSTS
 
     def get_profile(self):
         return get_object_or_404(
@@ -179,8 +175,7 @@ class ProfileListView(ListView):
         if self.request.user == self.get_profile():
             return Post.objects.filter(
                 author=self.get_profile()
-            ).annotate(
-                comment_count=models.Count('comments')
+            ).add_count(
             ).order_by('-pub_date')
         else:
             return Post.published_posts.filter(
