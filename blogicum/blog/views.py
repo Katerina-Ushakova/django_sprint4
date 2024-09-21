@@ -22,7 +22,6 @@ from .mixins import (
     PostFormMixin,
     PostMixin
 )
-from .managers import PublishedPostManager
 
 User = get_user_model()
 
@@ -50,8 +49,8 @@ class CategoryPostsListView(ListView):
         )
 
     def get_queryset(self):
-        return self.get_category(
-        ).posts.published_posts().add_count()
+        return Post.published_posts.add_count(
+        ).filter(category=self.get_category())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -175,10 +174,11 @@ class ProfileListView(ListView):
         if self.request.user == self.get_profile():
             return Post.objects.filter(
                 author=self.get_profile()
-            ).add_count(
+            ).annotate(
+                comment_count=models.Count('comments')
             ).order_by('-pub_date')
         else:
-            return Post.published_posts.filter(
+            return Post.published_posts.add_count().filter(
                 author=self.get_profile()
             )
 
