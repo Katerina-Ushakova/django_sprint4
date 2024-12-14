@@ -1,4 +1,3 @@
-from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
@@ -31,7 +30,7 @@ class IndexListView(ListView):
 
     template_name = 'blog/index.html'
     paginate_by = Constants.MAX_COUNT_POSTS
-    queryset = Post.published_posts.add_count().all()
+    queryset = Post.published_posts.all_filter()
 
 
 class CategoryPostsListView(ListView):
@@ -49,8 +48,8 @@ class CategoryPostsListView(ListView):
         )
 
     def get_queryset(self):
-        return Post.published_posts.add_count(
-        ).filter(category=self.get_category())
+        return Post.published_posts.annotate_comment_count(
+        ).publish_filter().filter(category=self.get_category())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -172,15 +171,13 @@ class ProfileListView(ListView):
 
     def get_queryset(self):
         if self.request.user == self.get_profile():
-            return Post.objects.filter(
+            return Post.published_posts.filter(
                 author=self.get_profile()
-            ).annotate(
-                comment_count=models.Count('comments')
-            ).order_by('-pub_date')
+            ).annotate_comment_count()
         else:
-            return Post.published_posts.add_count().filter(
+            return Post.published_posts.filter(
                 author=self.get_profile()
-            )
+            ).annotate_comment_count()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
