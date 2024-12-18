@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from django.views.generic import (
     ListView,
@@ -65,18 +65,15 @@ class DetailPostView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         post_id = self.kwargs.get(self.pk_url_kwarg)
-        return (
-            get_object_or_404(
-                Post.objects.filter(
-                    Q(pk=post_id)
-                    & Q(author=self.request.user)
-                    | Q(pk=post_id)
-                    & Q(is_published=True)
-                    & Q(category__is_published=True)
-                    & Q(pub_date__lte=timezone.now())
-                )
+        object = (super().get_object(Post.published_posts.select_related(
+            'location', 'category', 'author')))
+        if object.author != self.request.user:
+            return get_object_or_404(
+                Post.published_posts
+                .category_filter(),
+                pk=post_id
             )
-        )
+        return object
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -84,6 +81,9 @@ class DetailPostView(LoginRequiredMixin, DetailView):
         context['form'] = CommentForm()
         context['comments'] = self.get_object().comments.all()
         return context
+
+    def get_queryset(self):
+        return self.object.comments.select_related('author')
 
 
 class CreatePostView(PostMixin, PostFormMixin, CreateView):
@@ -170,14 +170,17 @@ class ProfileListView(ListView):
         )
 
     def get_queryset(self):
+        posts = (Post.published_posts
+                 .annotate_comment_count()
+                 .filter(author=self.get_profile()))
         if self.request.user == self.get_profile():
-            return Post.published_posts.filter(
-                author=self.get_profile()
-            ).annotate_comment_count()
-        else:
-            return Post.published_posts.filter(
-                author=self.get_profile()
-            ).annotate_comment_count()
+            return posts
+        return (posts
+                .filter(author=self.get_profile(),
+                        is_published=True,
+                        category__is_published=True,
+                        pub_date__lt=timezone.now())
+                )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

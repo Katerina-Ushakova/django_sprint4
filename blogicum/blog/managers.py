@@ -6,7 +6,7 @@ class PublishedPostQuerySet(models.QuerySet):
 
     def publish_filter(self):
         return (self
-                .select_related('author', 'category')
+                .select_related('location', 'author', 'category')
                 .filter(
                     is_published=True,
                     pub_date__lte=timezone.now()
