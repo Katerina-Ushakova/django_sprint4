@@ -2,7 +2,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Count
 from django.utils import timezone
 from django.views.generic import (
     ListView,
